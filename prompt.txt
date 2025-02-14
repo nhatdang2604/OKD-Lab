@@ -1,0 +1,12 @@
+Let say I want to learn how to use OKD with VirtualBox managed by Vagrant, with under conditions:
+- My host machine is Windows 10
+- I want to use OKD 4.17
+- I want 3 VMs (bootstrap, controller and compute)
+- In this 3 VMS, each has
+    + OS as Fedore CoreOS, download from Vagrant Cloud, must be stored in "F:/Vagrant/Boxes", and I want to download process in Vagrantfile
+    + Static ip with bridge network
+    + 4GB memory
+    + 2 vCPU
+    + 60GB storage, must be stored in "F:/Vagrant/VMs"
+
+- 1 VM for DNS server, run on Ubuntu with as least resource as possible
