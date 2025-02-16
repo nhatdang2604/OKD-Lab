@@ -5,7 +5,10 @@ Vagrant.configure("2") do |config|
 
   # Should change for each installation
   base_storage_path         = "F:/Vagrant/VMs"
-  bridged_network_interface = "Ethernet"
+  base_data_path            = "./data"
+  bridged_network_interface = "Ethernet adapter Ethernet"
+  bridged_network_name      = "eth1"
+  dns_ip                    = "8.8.8.8"
 
   # Define the box URL for OSs
   common_settings = {
@@ -21,9 +24,10 @@ Vagrant.configure("2") do |config|
         'size' => 60 * 1024 # MB
       },
       'network' => {
-        'name'      => 'public_network',
-        'type'      => 'bridged',
-        'interface' => bridged_network_interface
+        'name'           => 'public_network',
+        'type'           => 'bridged',
+        'interface'      => bridged_network_interface,
+        'interface_name' => bridged_network_name,
       }
     },
 
@@ -39,9 +43,10 @@ Vagrant.configure("2") do |config|
         'size' => 30 * 1024 # MB
       },
       'network' => {
-        'name'      => 'public_network',
-        'type'      => 'bridged',
-        'interface' => bridged_network_interface
+        'name'           => 'public_network',
+        'type'           => 'bridged',
+        'interface'      => bridged_network_interface,
+        'interface_name' => bridged_network_name,
       }
     }
   }
@@ -55,10 +60,12 @@ Vagrant.configure("2") do |config|
       'cpus'    => common_settings['okd']['cpus'],
       'storage' => common_settings['okd']['storage'],
       'network' => {
-        'name'      => common_settings['okd']['network']['name'],
-        'type'      => common_settings['okd']['network']['type'],
-        'interface' => common_settings['okd']['network']['interface'],
-        'ip'        => '192.168.56.101',
+        'name'           => common_settings['okd']['network']['name'],
+        'type'           => common_settings['okd']['network']['type'],
+        'interface'      => common_settings['okd']['network']['interface'],
+        'interface_name' => common_settings['okd']['network']['interface_name'],
+        'ip'             => '192.168.1.101',
+        'gateway'        => '192.168.1.1',
       },
     },
 
@@ -69,10 +76,12 @@ Vagrant.configure("2") do |config|
       'cpus'    => common_settings['okd']['cpus'],
       'storage' => common_settings['okd']['storage'],
       'network' => {
-        'name'      => common_settings['okd']['network']['name'],
-        'type'      => common_settings['okd']['network']['type'],
-        'interface' => common_settings['okd']['network']['interface'],
-        'ip'        => '192.168.56.102',
+        'name'           => common_settings['okd']['network']['name'],
+        'type'           => common_settings['okd']['network']['type'],
+        'interface'      => common_settings['okd']['network']['interface'],
+        'interface_name' => common_settings['okd']['network']['interface_name'],
+        'ip'             => '192.168.1.102',
+        'gateway'        => '192.168.1.1',
       },
     },
 
@@ -83,10 +92,12 @@ Vagrant.configure("2") do |config|
       'cpus'    => common_settings['okd']['cpus'],
       'storage' => common_settings['okd']['storage'],
       'network' => {
-        'name'      => common_settings['okd']['network']['name'],
-        'type'      => common_settings['okd']['network']['type'],
-        'interface' => common_settings['okd']['network']['interface'],
-        'ip'        => '192.168.56.103',
+        'name'           => common_settings['okd']['network']['name'],
+        'type'           => common_settings['okd']['network']['type'],
+        'interface'      => common_settings['okd']['network']['interface'],
+        'interface_name' => common_settings['okd']['network']['interface_name'],
+        'ip'             => '192.168.1.103',
+        'gateway'        => '192.168.1.1',
       },
     },
 
@@ -97,32 +108,62 @@ Vagrant.configure("2") do |config|
       'cpus'    => common_settings['dns']['cpus'],
       'storage' => common_settings['dns']['storage'],
       'network' => {
-        'name'      => common_settings['dns']['network']['name'],
-        'type'      => common_settings['dns']['network']['type'],
-        'interface' => common_settings['okd']['network']['interface'],
-        'ip'        => '192.168.56.104',
+        'name'           => common_settings['dns']['network']['name'],
+        'type'           => common_settings['dns']['network']['type'],
+        'interface'      => common_settings['okd']['network']['interface'],
+        'interface_name' => common_settings['okd']['network']['interface_name'],
+        'ip'             => '192.168.1.104',
+        'gateway'        => '192.168.1.1',
       },
     },
   ]
 
   vms.each do |vm|
     config.vm.define vm['name'] do |node|
+
+      # Setup bio
       node.vm.box = vm['os']['box']
       node.vm.box_version = vm['os']['version']
       node.vm.hostname = vm['name']
+
+      # Setup workspace
+      vm_name = vm['name']
+      vm_storage_path = "#{vm['storage']['path']}/#{vm_name}"
+      unless Dir.exist?(vm_storage_path)
+        Dir.mkdir(vm_storage_path)
+      end
+
+      # Setup network with Static ip on bridged network interface
+      vm_network = vm['network']
+      node.vm.network vm_network['name'], bridge: vm_network['interface'], type: 'static', ip: vm_network['ip']  
+      node.vm.provision "shell", inline: <<-SHELL
+        echo "Attempt to set static ip for #{vm_name}"
+        
+        set -x
+        echo "Debug mode on"
+        
+        CONNECTION_NAME=$(nmcli -t -f NAME,DEVICE connection show | grep "#{vm_network['interface_name']}" | cut -d: -f1)
+        echo $CONNECTION_NAME
+
+        sudo nmcli con mod "$CONNECTION_NAME" \
+          ipv4.addresses #{vm_network['ip']}/24 ipv4.gateway #{vm_network['gateway']} ipv4.dns #{dns_ip} ipv4.method manual
+        echo "Set network manually done"
+
+        sudo nmcli con down "$CONNECTION_NAME" && sudo nmcli con up "$CONNECTION_NAME"
+        echo "Restart network done"
+
+      SHELL
+      
+      # Setup sync folder
+      host_dir  = "#{base_data_path}/#{vm_name}/"
+      guest_dir = "/home/vagrant/#{vm_name}/"
+      node.vm.synced_folder host_dir, guest_dir
 
       # VMs resources
       node.vm.provider "virtualbox" do |vb|
         vb.memory = vm['memory']
         vb.cpus   = vm['cpus'] 
         vb.name   = vm['name']
-
-        # Setup workspace
-        vm_name = vm['name']
-        vm_storage_path = "#{vm['storage']['path']}/#{vm_name}"
-        unless Dir.exist?(vm_storage_path)
-          Dir.mkdir(vm_storage_path)
-        end
 
         # Setup storage
         vdi_path = "#{vm_storage_path}/#{vm_name}.vdi"
@@ -133,11 +174,6 @@ Vagrant.configure("2") do |config|
         vb.customize ["storageattach", vm_name, "--storagectl", "SATA", "--port", "1", "--device", "0", "--type", "hdd", "--medium", vdi_path]
 
       end
-
-      # Static IP and networking setup
-      vm_network = vm['network']
-      node.vm.network vm_network['name'], bridge: vm_network['interface'], type: 'static', ip: vm_network['ip']
-      
     end
   end
 end
