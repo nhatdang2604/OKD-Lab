@@ -1,0 +1,29 @@
+$TTL    604800
+@       IN      SOA     okd4-services.okd.local. admin.okd.local. (
+                  1     ; Serial
+             604800     ; Refresh
+              86400     ; Retry
+            2419200     ; Expire
+             604800     ; Negative Cache TTL
+)
+
+; name servers - NS records
+    IN      NS      okd4-services
+
+; name servers - A records
+okd4-services.okd.local.                            IN      A       192.168.1.104
+
+; OpenShift Container Platform Cluster - A records
+okd4-bootstrap.cloud.okd.local.                     IN      A      192.168.1.101
+okd4-control.cloud.okd.local.                       IN      A      192.168.1.102
+okd4-compute.cloud.okd.local.                       IN      A      192.168.1.103
+
+; OpenShift internal cluster IPs - A records
+etcd.cloud.okd.local.                               IN     A     192.168.99.102
+console-openshift-console.apps.cloud.okd.local.     IN     A     192.168.99.102
+oauth-openshift.apps.cloud.okd.local.               IN     A     192.168.99.102
+
+; OpenShift internal cluster IPs - SRV records
+_etcd-server-ssl._tcp.cloud.okd.local.    86400     IN    SRV     0    10    2380    etcd.cloud
+
+

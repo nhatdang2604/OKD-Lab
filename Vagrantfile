@@ -33,8 +33,8 @@ Vagrant.configure("2") do |config|
 
     'dns' => {
       'os'   => {
-        'box'     => 'fedora/38-cloud-base',
-        'version' => '38.20230413.1'
+        'box'     => 'centos/8',
+        'version' => '2011.0'
       },
       'memory'  => "1024", # MB
       'cpus'    => 2, #vCPUs
@@ -118,9 +118,10 @@ Vagrant.configure("2") do |config|
     },
   ]
 
+  # Setup for each VM
   vms.each do |vm|
     config.vm.define vm['name'] do |node|
-
+      
       # Setup bio
       node.vm.box = vm['os']['box']
       node.vm.box_version = vm['os']['version']
@@ -132,6 +133,11 @@ Vagrant.configure("2") do |config|
       unless Dir.exist?(vm_storage_path)
         Dir.mkdir(vm_storage_path)
       end
+
+      # Setup sync folder
+      # host_dir  = "#{base_data_path}/#{vm_name}/"
+      # guest_dir = "/home/vagrant/#{vm_name}/"
+      # node.vm.synced_folder host_dir, guest_dir
 
       # Setup network with Static ip on bridged network interface
       vm_network = vm['network']
@@ -154,11 +160,6 @@ Vagrant.configure("2") do |config|
 
       SHELL
       
-      # Setup sync folder
-      host_dir  = "#{base_data_path}/#{vm_name}/"
-      guest_dir = "/home/vagrant/#{vm_name}/"
-      node.vm.synced_folder host_dir, guest_dir
-
       # VMs resources
       node.vm.provider "virtualbox" do |vb|
         vb.memory = vm['memory']
@@ -174,6 +175,35 @@ Vagrant.configure("2") do |config|
         vb.customize ["storageattach", vm_name, "--storagectl", "SATA", "--port", "1", "--device", "0", "--type", "hdd", "--medium", vdi_path]
 
       end
+
+      # DNS setup
+      if "dns" == vm_name
+        
+        # Copy config file
+        node.vm.provision "shell", inline: <<-SHELL
+          echo "Start to copy config file"  
+          
+          set -x
+          echo "Debug mode on"
+
+          sudo mkdir /etc/named/
+          sudo mkdir /etc/named/zones
+          echo "Make dir done"
+
+          sudo cp /vagrant/data/dns/etc/named.conf /etc/named.conf
+          echo "Copy /etc/named.conf done"
+
+          sudo cp /vagrant/data/dns/etc/named/named.conf.local /etc/named/named.conf.local
+          echo "Copy /etc/named/named.conf.local done"
+
+          sudo cp -r /vagrant/data/dns/etc/named/zones/ /etc/named/
+          echo "Copy /etc/named/zones done"
+
+        SHELL
+
+      end
     end
   end
 end
+
+  
