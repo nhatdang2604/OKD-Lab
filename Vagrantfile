@@ -33,8 +33,8 @@ Vagrant.configure("2") do |config|
 
     'dns' => {
       'os'   => {
-        'box'     => 'centos/8',
-        'version' => '2011.0'
+        'box'     => 'centos/stream9',
+        'version' => '20250210.0'
       },
       'memory'  => "1024", # MB
       'cpus'    => 2, #vCPUs
@@ -191,13 +191,21 @@ Vagrant.configure("2") do |config|
           echo "Make dir done"
 
           sudo cp /vagrant/data/dns/etc/named.conf /etc/named.conf
-          echo "Copy /etc/named.conf done"
-
           sudo cp /vagrant/data/dns/etc/named/named.conf.local /etc/named/named.conf.local
-          echo "Copy /etc/named/named.conf.local done"
-
           sudo cp -r /vagrant/data/dns/etc/named/zones/ /etc/named/
-          echo "Copy /etc/named/zones done"
+          echo "Copy config files done"
+
+          sudo dnf -y install bind bind-utils
+          echo "Finish install binds"
+
+          sudo systemctl enable named
+          sudo systemctl stop named
+          sudo systemctl start named
+          sudo systemctl status named
+          echo "Restart named service done"
+
+          sudo nmcli connection modify eth1 ipv4.dns "127.0.0.1"
+          echo "Setup dns done"          
 
         SHELL
 
