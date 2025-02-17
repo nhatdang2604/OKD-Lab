@@ -204,7 +204,8 @@ Vagrant.configure("2") do |config|
           sudo systemctl status named
           echo "Restart named service done"
 
-          sudo nmcli connection modify eth1 ipv4.dns "127.0.0.1"
+          PRIMARY_CONNECTION_NAME=$(nmcli -t -f NAME,DEVICE connection show | grep "eth0" | cut -d: -f1)
+          sudo nmcli connection modify "$PRIMARY_CONNECTION_NAME" ipv4.dns "127.0.0.1" ipv4.ignore-auto-dns yes
           echo "Setup dns done"          
 
         SHELL
