@@ -151,11 +151,11 @@ Vagrant.configure("2") do |config|
         CONNECTION_NAME=$(nmcli -t -f NAME,DEVICE connection show | grep "#{vm_network['interface_name']}" | cut -d: -f1)
         echo $CONNECTION_NAME
 
-        sudo nmcli con mod "$CONNECTION_NAME" \
+        sudo nmcli connection modify "$CONNECTION_NAME" \
           ipv4.addresses #{vm_network['ip']}/24 ipv4.gateway #{vm_network['gateway']} ipv4.dns #{dns_ip} ipv4.method manual
         echo "Set network manually done"
 
-        sudo nmcli con down "$CONNECTION_NAME" && sudo nmcli con up "$CONNECTION_NAME"
+        sudo nmcli connection down "$CONNECTION_NAME" && sudo nmcli connection up "$CONNECTION_NAME"
         echo "Restart network done"
 
       SHELL
@@ -183,30 +183,51 @@ Vagrant.configure("2") do |config|
         node.vm.provision "shell", inline: <<-SHELL
           echo "Start to copy config file"  
           
+          # Debug mode on
           set -x
           echo "Debug mode on"
 
+          # Setup config file from host machine to VM
           sudo mkdir /etc/named/
           sudo mkdir /etc/named/zones
-          echo "Make dir done"
-
           sudo cp /vagrant/data/dns/etc/named.conf /etc/named.conf
           sudo cp /vagrant/data/dns/etc/named/named.conf.local /etc/named/named.conf.local
           sudo cp -r /vagrant/data/dns/etc/named/zones/ /etc/named/
           echo "Copy config files done"
 
-          sudo dnf -y install bind bind-utils
-          echo "Finish install binds"
+          # Setup FirewallD
+          sudo systemctl start firewalld
+          sudo firewall-cmd --permanent --add-port=53/udp
+          sudo firewall-cmd --reload
+          sudo systemctl status firewalld
 
+          # Setup DNS server
+          sudo dnf -y install bind bind-utils
           sudo systemctl enable named
           sudo systemctl stop named
           sudo systemctl start named
           sudo systemctl status named
           echo "Restart named service done"
 
+          # Config the current DNS server of the DNS machine become localhost
           PRIMARY_CONNECTION_NAME=$(nmcli -t -f NAME,DEVICE connection show | grep "eth0" | cut -d: -f1)
-          sudo nmcli connection modify "$PRIMARY_CONNECTION_NAME" ipv4.dns "127.0.0.1" ipv4.ignore-auto-dns yes
+          SECONDARY_CONNECTION_NAME=$(nmcli -t -f NAME,DEVICE connection show | grep "eth1" | cut -d: -f1)
+          sudo nmcli connection modify "$PRIMARY_CONNECTION_NAME" ipv4.dns "127.0.0.1"
+          sudo nmcli connection modify "$SECONDARY_CONNECTION_NAME" ipv4.dns "127.0.0.1"
+          sudo nmcli connection down "$PRIMARY_CONNECTION_NAME" && sudo nmcli connection up "$PRIMARY_CONNECTION_NAME"
+          sudo nmcli connection down "$SECONDARY_CONNECTION_NAME" && sudo nmcli connection up "$SECONDARY_CONNECTION_NAME"
           echo "Setup dns done"          
+
+          # Test DNS resolve
+          nslookup okd4-services.okd.local
+          nslookup okd4-bootstrap.cloud.okd.local
+          nslookup okd4-control.cloud.okd.local
+          nslookup okd4-compute.cloud.okd.local
+          nslookup etcd.cloud.okd.local
+          nslookup console-openshift-console.apps.cloud.okd.local
+          nslookup oauth-openshift.apps.cloud.okd.local
+          nslookup _etcd-server-ssl._tcp.cloud.okd.local
+          nslookup google.com
 
         SHELL
 
