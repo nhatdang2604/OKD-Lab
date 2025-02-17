@@ -170,10 +170,9 @@ Vagrant.configure("2") do |config|
         vdi_path = "#{vm_storage_path}/#{vm_name}.vdi"
         unless File.exist?(vdi_path)
           vb.customize ["createhd", "--filename", vdi_path, "--size", vm['storage']['size']]
+          vb.customize ["storagectl", vm_name, "--name", "SATA", "--add", "sata", "--controller", "IntelAhci"]
+          vb.customize ["storageattach", vm_name, "--storagectl", "SATA", "--port", "1", "--device", "0", "--type", "hdd", "--medium", vdi_path]
         end
-        vb.customize ["storagectl", vm_name, "--name", "SATA", "--add", "sata", "--controller", "IntelAhci"]
-        vb.customize ["storageattach", vm_name, "--storagectl", "SATA", "--port", "1", "--device", "0", "--type", "hdd", "--medium", vdi_path]
-
       end
 
       # DNS setup
@@ -226,9 +225,17 @@ Vagrant.configure("2") do |config|
           nslookup etcd.cloud.okd.local
           nslookup console-openshift-console.apps.cloud.okd.local
           nslookup oauth-openshift.apps.cloud.okd.local
-          nslookup _etcd-server-ssl._tcp.cloud.okd.local
           nslookup google.com
 
+          # Setup httpd
+          sudo dnf install -y httpd
+          sudo sed -i 's/Listen 80/Listen 8080/' /etc/httpd/conf/httpd.conf 
+          sudo setsebool -P httpd_read_user_content 1
+          sudo firewall-cmd --permanent --add-port=8080/tcp
+          sudo firewall-cmd --reload
+          sudo systemctl enable httpd
+          sudo systemctl start httpd
+          
         SHELL
 
       end
