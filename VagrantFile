@@ -211,7 +211,7 @@ Vagrant.configure("2") do |config|
         
         # Copy config file
         node.vm.provision "shell", inline: <<-SHELL
-          echo "Start to copy config file"  
+          echo "Start to init DNS/Service Node"  
           
           # Debug mode on
           set -x
