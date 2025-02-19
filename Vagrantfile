@@ -211,7 +211,7 @@ Vagrant.configure("2") do |config|
         
         # Copy config file
         node.vm.provision "shell", inline: <<-SHELL
-          echo "Start to copy config file"  
+          echo "Start to init DNS/Service Node"  
           
           # Debug mode on
           set -x
@@ -304,6 +304,38 @@ Vagrant.configure("2") do |config|
 
         SHELL
       end
+
+      # Load Balancer setup
+      if "load-balancer" == vm_name
+        # Copy config file
+        node.vm.provision "shell", inline: <<-SHELL
+          echo "Start to init Load Balancer Node"   
+          
+          # Debug mode on
+          set -x
+          echo "Debug mode on"
+
+          # Setup FirewallD
+          sudo systemctl start firewalld
+          sudo systemctl status firewalld
+          sudo firewall-cmd --permanent --add-port=6443/tcp
+          sudo firewall-cmd --permanent --add-port=22623/tcp
+          sudo firewall-cmd --permanent --add-service=http
+          sudo firewall-cmd --permanent --add-service=https
+          sudo firewall-cmd --permanent --add-port=9000/tcp
+          sudo firewall-cmd --reload
+
+          # Setup HA Proxy
+          sudo dnf install haproxy -y
+          sudo cp /vagrant/data/load-balancer/etc/haproxy.cfg /etc/haproxy/haproxy.cfg
+          sudo setsebool -P haproxy_connect_any 1
+          sudo systemctl enable haproxy
+          sudo systemctl start haproxy
+          sudo systemctl status haproxy
+
+        SHELL
+      end
+
     end
   end
 end
