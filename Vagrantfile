@@ -8,7 +8,6 @@ Vagrant.configure("2") do |config|
   base_data_path            = "./data"
   bridged_network_interface = "Ethernet adapter Ethernet"
   bridged_network_name      = "eth1"
-  dns_ip                    = "8.8.8.8"
 
   # Define the box URL for OSs
   common_settings = {
@@ -66,6 +65,7 @@ Vagrant.configure("2") do |config|
         'type'           => 'bridged',
         'interface'      => bridged_network_interface,
         'interface_name' => bridged_network_name,
+        'ip'             => '192.168.1.104',
       }
     }
   }
@@ -82,9 +82,9 @@ Vagrant.configure("2") do |config|
       'network' => {
         'name'           => common_settings['dns']['network']['name'],
         'type'           => common_settings['dns']['network']['type'],
-        'interface'      => common_settings['okd']['network']['interface'],
-        'interface_name' => common_settings['okd']['network']['interface_name'],
-        'ip'             => '192.168.1.104',
+        'interface'      => common_settings['dns']['network']['interface'],
+        'interface_name' => common_settings['dns']['network']['interface_name'],
+        'ip'             => common_settings['dns']['network']['ip'],
         'gateway'        => '192.168.1.1',
       },
     },
@@ -98,8 +98,8 @@ Vagrant.configure("2") do |config|
       'network' => {
         'name'           => common_settings['lb']['network']['name'],
         'type'           => common_settings['lb']['network']['type'],
-        'interface'      => common_settings['okd']['network']['interface'],
-        'interface_name' => common_settings['okd']['network']['interface_name'],
+        'interface'      => common_settings['lb']['network']['interface'],
+        'interface_name' => common_settings['lb']['network']['interface_name'],
         'ip'             => '192.168.1.105',
         'gateway'        => '192.168.1.1',
       },
@@ -183,7 +183,7 @@ Vagrant.configure("2") do |config|
         echo $CONNECTION_NAME
 
         sudo nmcli connection modify "$CONNECTION_NAME" \
-          ipv4.addresses #{vm_network['ip']}/24 ipv4.gateway #{vm_network['gateway']} ipv4.dns #{dns_ip} ipv4.method manual
+          ipv4.addresses #{vm_network['ip']}/24 ipv4.gateway #{vm_network['gateway']} ipv4.dns #{common_settings['okd']['network']['ip']} ipv4.method manual
         echo "Set network manually done"
 
         sudo nmcli connection down "$CONNECTION_NAME" && sudo nmcli connection up "$CONNECTION_NAME"
@@ -307,7 +307,7 @@ Vagrant.configure("2") do |config|
 
       # Load Balancer setup
       if "load-balancer" == vm_name
-        # Copy config file
+        
         node.vm.provision "shell", inline: <<-SHELL
           echo "Start to init Load Balancer Node"   
           
@@ -332,6 +332,24 @@ Vagrant.configure("2") do |config|
           sudo systemctl enable haproxy
           sudo systemctl start haproxy
           sudo systemctl status haproxy
+
+        SHELL
+      end
+
+      # Bootstrap setup
+      if "bootstrap" == vm_name
+        node.vm.provision "shell", inline: <<-SHELL
+          echo "Start to init Bootstrap Node"   
+          
+          # Debug mode on
+          set -x
+          echo "Debug mode on"
+
+          # Install Fedora CoreOS
+          sudo dnf install coreos-installer -y
+          OKD_SERVICE_URL=#{common_settings['dns']['network']['ip']}
+          sudo coreos-installer install --ignition-url http://$OKD_SERVICE_URL:8080/okd4/bootstrap.ign /dev/sda --insecure-ignition --copy-network
+          sudo reboot
 
         SHELL
       end
