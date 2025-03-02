@@ -3,7 +3,7 @@ Vagrant.configure("2") do |config|
   # Make things don't update
   config.vm.box_check_update = false
 
-  # Should change for each installation
+  # Should change for each specific installation
   base_storage_path         = "F:/Vagrant/VMs"
   base_data_path            = "./data"
   bridged_network_interface = "Ethernet adapter Ethernet"
@@ -13,8 +13,8 @@ Vagrant.configure("2") do |config|
   common_settings = {
     'okd' => {
       'os' => {
-        'box'     => "fedora/38-cloud-base",
-        'version' => "38.20230413.1"
+        'box'       => nil,
+        'version'   => nil,
       },
       'memory'  => "4096", # MB
       'cpus'    => 2, #vCPUs
@@ -159,19 +159,21 @@ Vagrant.configure("2") do |config|
 
   # Setup for each VM
   vms.each do |vm|
-    config.vm.define vm['name'] do |node|
-      
-      vm_name = vm['name']
-      case vm_name
+
+    vm_name = vm['name']
+    case vm_name
       when "service"
-        setup_service_node(vm, node, dns_ip)
+        config.vm.define vm['name'] do |node|
+          setup_service_node(vm, node, dns_ip)
+        end
       when "load-balancer"
-        setup_load_balancer_node(vm, node, dns_ip)
+        config.vm.define vm['name'] do |node|
+          setup_load_balancer_node(vm, node, dns_ip)
+        end
       when "bootstrap"
-        setup_bootstrap_node(vm, node, dns_ip)
+        #setup_bootstrap_node(vm, node, dns_ip)
       else
         # do nothing
-      end
     end
   end
 end
@@ -281,8 +283,15 @@ def setup_service_node(vm, node, dns_ip)
 end
 
 def setup_os(vm, node)
-  node.vm.box = vm['os']['box']
-  node.vm.box_version = vm['os']['version']
+
+  unless vm['os']['box'].nil?
+    node.vm.box = vm['os']['box']
+  end
+
+  unless vm['os']['version'].nil?
+    node.vm.box_version = vm['os']['version']
+  end
+  
   node.vm.hostname = vm['name']
 end
 
