@@ -8,13 +8,15 @@ Vagrant.configure("2") do |config|
   base_data_path            = "./data"
   bridged_network_interface = "Ethernet adapter Ethernet"
   bridged_network_name      = "eth1"
+  fcos_location             = "E:/soft/OS/Fedora/fedora-coreos-41.20250130.3.0-live.x86_64.iso"
 
   # Define the common setting for each type of VM
   common_settings = {
     'okd' => {
       'os' => {
-        'box'       => nil,
-        'version'   => nil,
+        'box'          => 'dhml/fedora-coreos-34.20210725.3.0-20210813',
+        'version'      => '0',
+        'iso_location' => fcos_location
       },
       'memory'  => "4096", # MB
       'cpus'    => 2, #vCPUs
@@ -171,7 +173,9 @@ Vagrant.configure("2") do |config|
           setup_load_balancer_node(vm, node, dns_ip)
         end
       when "bootstrap"
-        #setup_bootstrap_node(vm, node, dns_ip)
+        # config.vm.define vm['name'] do |node|
+        #   setup_bootstrap_node(vm, node, dns_ip)
+        # end
       else
         # do nothing
     end
@@ -386,7 +390,6 @@ def setup_load_balancer_node(vm, node, dns_ip)
 end
 
 def setup_bootstrap_node(vm, node, dns_ip)
-
   # Common setup
   setup_os(vm, node)
   setup_workspace(vm, node)
@@ -401,11 +404,14 @@ def setup_bootstrap_node(vm, node, dns_ip)
     set -x
     echo "Debug mode on"
 
-    # Install Fedora CoreOS
-    sudo dnf install coreos-installer -y
+    # Download ignition file
     OKD_SERVICE_URL=#{dns_ip}
-    sudo coreos-installer install --ignition-url http://$OKD_SERVICE_URL:8080/okd4/bootstrap.ign /dev/sda --insecure-ignition --copy-network
-    sudo reboot
+    curl -o /tmp/bootstrap.ign http://$OKD_SERVICE_URL:8080/okd4/bootstrap.ign
+  
+    # Install FCOS using ignition file
+    sudo coreos-installer install /dev/sda --ignition-file /tmp/bootstrap.ign --insecure-ignition --copy-network
 
+    # Reboot to boot from the new installation
+    sudo reboot
   SHELL
 end
