@@ -14,8 +14,8 @@ Vagrant.configure("2") do |config|
   common_settings = {
     'okd' => {
       'os' => {
-        'box'          => 'dhml/fedora-coreos-34.20210725.3.0-20210813',
-        'version'      => '0',
+        'box'          => nil,
+        'version'      => nil,
         'iso_location' => fcos_location
       },
       'memory'  => "4096", # MB
@@ -67,7 +67,7 @@ Vagrant.configure("2") do |config|
         'type'           => 'bridged',
         'interface'      => bridged_network_interface,
         'interface_name' => bridged_network_name,
-        'ip'             => '192.168.1.104', # use this service as DNS server too
+        'ip'             => '192.168.1.100', # use this service as DNS server too
       }
     }
   }
@@ -102,7 +102,7 @@ Vagrant.configure("2") do |config|
         'type'           => common_settings['lb']['network']['type'],
         'interface'      => common_settings['lb']['network']['interface'],
         'interface_name' => common_settings['lb']['network']['interface_name'],
-        'ip'             => '192.168.1.105',
+        'ip'             => '192.168.1.99',
         'gateway'        => '192.168.1.1',
       },
     },
@@ -118,13 +118,29 @@ Vagrant.configure("2") do |config|
         'type'           => common_settings['okd']['network']['type'],
         'interface'      => common_settings['okd']['network']['interface'],
         'interface_name' => common_settings['okd']['network']['interface_name'],
+        'ip'             => '192.168.1.98',
+        'gateway'        => '192.168.1.1',
+      },
+    },
+
+    {
+      'name'    => 'control-plane-1',
+      'os'      => common_settings['okd']['os'],
+      'memory'  => common_settings['okd']['memory'],
+      'cpus'    => common_settings['okd']['cpus'],
+      'storage' => common_settings['okd']['storage'],
+      'network' => {
+        'name'           => common_settings['okd']['network']['name'],
+        'type'           => common_settings['okd']['network']['type'],
+        'interface'      => common_settings['okd']['network']['interface'],
+        'interface_name' => common_settings['okd']['network']['interface_name'],
         'ip'             => '192.168.1.101',
         'gateway'        => '192.168.1.1',
       },
     },
 
     {
-      'name'    => 'controller',
+      'name'    => 'control-plane-2',
       'os'      => common_settings['okd']['os'],
       'memory'  => common_settings['okd']['memory'],
       'cpus'    => common_settings['okd']['cpus'],
@@ -140,7 +156,7 @@ Vagrant.configure("2") do |config|
     },
 
     {
-      'name'    => 'compute',
+      'name'    => 'control-plane-3',
       'os'      => common_settings['okd']['os'],
       'memory'  => common_settings['okd']['memory'],
       'cpus'    => common_settings['okd']['cpus'],
@@ -151,6 +167,38 @@ Vagrant.configure("2") do |config|
         'interface'      => common_settings['okd']['network']['interface'],
         'interface_name' => common_settings['okd']['network']['interface_name'],
         'ip'             => '192.168.1.103',
+        'gateway'        => '192.168.1.1',
+      },
+    },
+
+    {
+      'name'    => 'compute-1',
+      'os'      => common_settings['okd']['os'],
+      'memory'  => common_settings['okd']['memory'],
+      'cpus'    => common_settings['okd']['cpus'],
+      'storage' => common_settings['okd']['storage'],
+      'network' => {
+        'name'           => common_settings['okd']['network']['name'],
+        'type'           => common_settings['okd']['network']['type'],
+        'interface'      => common_settings['okd']['network']['interface'],
+        'interface_name' => common_settings['okd']['network']['interface_name'],
+        'ip'             => '192.168.1.201',
+        'gateway'        => '192.168.1.1',
+      },
+    },
+
+    {
+      'name'    => 'compute-2',
+      'os'      => common_settings['okd']['os'],
+      'memory'  => common_settings['okd']['memory'],
+      'cpus'    => common_settings['okd']['cpus'],
+      'storage' => common_settings['okd']['storage'],
+      'network' => {
+        'name'           => common_settings['okd']['network']['name'],
+        'type'           => common_settings['okd']['network']['type'],
+        'interface'      => common_settings['okd']['network']['interface'],
+        'interface_name' => common_settings['okd']['network']['interface_name'],
+        'ip'             => '192.168.1.202',
         'gateway'        => '192.168.1.1',
       },
     },
@@ -232,9 +280,14 @@ def setup_service_node(vm, node, dns_ip)
     # Test DNS resolve
     nslookup okd4-services.okd.local
     nslookup okd4-bootstrap.cloud.okd.local
-    nslookup okd4-control.cloud.okd.local
-    nslookup okd4-compute.cloud.okd.local
-    nslookup etcd.cloud.okd.local
+    nslookup okd4-control-plane-1.cloud.okd.local
+    nslookup okd4-control-plane-2.cloud.okd.local
+    nslookup okd4-control-plane-3.cloud.okd.local
+    nslookup okd4-compute-1.cloud.okd.local
+    nslookup okd4-compute-2.cloud.okd.local
+    nslookup etcd-0.cloud.okd.local
+    nslookup etcd-1.cloud.okd.local
+    nslookup etcd-2.cloud.okd.local
     nslookup console-openshift-console.apps.cloud.okd.local
     nslookup oauth-openshift.apps.cloud.okd.local
     nslookup google.com

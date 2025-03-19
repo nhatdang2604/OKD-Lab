@@ -11,23 +11,29 @@ $TTL    604800
     IN      NS      okd4-services
 
 ; name servers - A records
-okd4-services.okd.local.                            IN      A      192.168.1.104
-okd4-lb.okd.local.                                  IN      A      192.168.1.105 
+okd4-services.okd.local.                            IN      A      192.168.1.100
+okd4-lb.okd.local.                                  IN      A      192.168.1.99 
 
 ; OpenShift Container Platform Cluster - A records
-okd4-bootstrap.cloud.okd.local.                     IN      A      192.168.1.101
-okd4-control.cloud.okd.local.                       IN      A      192.168.1.102
-okd4-compute.cloud.okd.local.                       IN      A      192.168.1.103
+okd4-bootstrap.cloud.okd.local.                     IN      A      192.168.1.98
+okd4-control-plane-1.cloud.okd.local.               IN      A      192.168.1.101
+okd4-control-plane-2.cloud.okd.local.               IN      A      192.168.1.102
+okd4-control-plane-3.cloud.okd.local.               IN      A      192.168.1.103
+okd4-compute-1.cloud.okd.local.                     IN      A      192.168.1.201
+okd4-compute-2.cloud.okd.local.                     IN      A      192.168.1.202
 
 ; OpenShift internal cluster IPs - A records
-api.cloud.okd.local.                                IN     A     192.168.1.105
-api-int.cloud.okd.local.                            IN     A     192.168.1.105
-*.apps.cloud.okd.local.                             IN     A     192.168.1.105
-etcd.cloud.okd.local.                               IN     A     192.168.1.102
-console-openshift-console.apps.cloud.okd.local.     IN     A     192.168.1.105
-oauth-openshift.apps.cloud.okd.local.               IN     A     192.168.1.105
+api.cloud.okd.local.                                IN     A     192.168.1.99
+api-int.cloud.okd.local.                            IN     A     192.168.1.99
+*.apps.cloud.okd.local.                             IN     A     192.168.1.99
+etcd-0.cloud.okd.local.                             IN     A     192.168.1.101
+etcd-1.cloud.okd.local.                             IN     A     192.168.1.102
+etcd-2.cloud.okd.local.                             IN     A     192.168.1.103
+console-openshift-console.apps.cloud.okd.local.     IN     A     192.168.1.99
+oauth-openshift.apps.cloud.okd.local.               IN     A     192.168.1.99
 
 ; OpenShift internal cluster IPs - SRV records
-_etcd-server-ssl._tcp.cloud.okd.local.    86400     IN    SRV     0    10    2380    etcd.cloud
-
+_etcd-server-ssl._tcp.cloud.okd.local.    86400     IN    SRV     0    10    2380    etcd-0.cloud
+_etcd-server-ssl._tcp.cloud.okd.local.    86400     IN    SRV     0    10    2380    etcd-1.cloud
+_etcd-server-ssl._tcp.cloud.okd.local.    86400     IN    SRV     0    10    2380    etcd-2.cloud
 
