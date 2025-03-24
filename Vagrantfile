@@ -56,7 +56,7 @@ Vagrant.configure("2") do |config|
         'box'     => 'centos/stream9',
         'version' => '20250210.0'
       },
-      'memory'  => "4096", # MB
+      'memory'  => "2048", # MB
       'cpus'    => 2, #vCPUs
       'storage' => {
         'path' => base_storage_path,
