@@ -17,7 +17,7 @@ networking:
   clusterNetwork:
   - cidr: 10.128.0.0/14 
     hostPrefix: 23 
-  networkType: OVNKubernetes
+  networkType: OpenShiftSDN
   serviceNetwork: 
   - 172.30.0.0/16
 
@@ -26,5 +26,5 @@ platform:
 
 fips: false
 
-pullSecret: '{"auths":{"fake":{"auth":"aWQ6cGFzcwo="}}}' 
+pullSecret: '{"auths":{"fake":{"auth":"bar"}}}' 
 sshKey: 'replace_your_ssh_key_here'

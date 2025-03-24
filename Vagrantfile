@@ -304,10 +304,10 @@ def setup_service_node(vm, node, dns_ip)
     # Setup OKD Client
     sudo dnf install -y wget
     mkdir /home/vagrant/softs
-    wget -P /home/vagrant/softs https://github.com/okd-project/okd/releases/download/4.15.0-0.okd-2024-03-10-010116/openshift-client-linux-4.15.0-0.okd-2024-03-10-010116.tar.gz
-    wget -P /home/vagrant/softs https://github.com/okd-project/okd/releases/download/4.15.0-0.okd-2024-03-10-010116/openshift-install-linux-4.15.0-0.okd-2024-03-10-010116.tar.gz
-    tar -xvzf /home/vagrant/softs/openshift-client-linux-4.15.0-0.okd-2024-03-10-010116.tar.gz -C /home/vagrant/softs
-    tar -xvzf /home/vagrant/softs/openshift-install-linux-4.15.0-0.okd-2024-03-10-010116.tar.gz -C /home/vagrant/softs
+    wget -P /home/vagrant/softs https://github.com/okd-project/okd/releases/download/4.6.0-0.okd-2021-02-14-205305/openshift-client-linux-4.6.0-0.okd-2021-02-14-205305.tar.gz
+    wget -P /home/vagrant/softs https://github.com/okd-project/okd/releases/download/4.6.0-0.okd-2021-02-14-205305/openshift-install-linux-4.6.0-0.okd-2021-02-14-205305.tar.gz
+    tar -xvzf /home/vagrant/softs/openshift-client-linux-4.6.0-0.okd-2021-02-14-205305.tar.gz -C /home/vagrant/softs
+    tar -xvzf /home/vagrant/softs/openshift-install-linux-4.6.0-0.okd-2021-02-14-205305.tar.gz -C /home/vagrant/softs
     sudo mv /home/vagrant/softs/kubectl /home/vagrant/softs/oc /home/vagrant/softs/openshift-install /usr/local/bin
 
     # Setup OKD config
